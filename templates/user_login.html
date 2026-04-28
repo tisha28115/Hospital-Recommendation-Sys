@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <main class="shell auth-shell">
+      <section class="hero auth-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">User Access</p>
+          <h1>Login as User.</h1>
+          <p class="lede">
+            Sign in to get hospital recommendations, view history, and book appointments.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <a class="ghost-link" href="/">Back to Landing</a>
+        </div>
+      </section>
+
+      <section class="auth-single">
+        <article class="panel auth-card">
+          <h2>User Login</h2>
+          <form id="login-form" class="stack-form">
+            <input name="email" type="email" placeholder="Email" required />
+            <input name="password" type="password" placeholder="Password" required />
+            <button type="submit">Login as User</button>
+          </form>
+          <div id="auth-status" class="muted status-text"></div>
+          <button id="resend-verification-btn" class="secondary-btn" type="button">Resend Verification Email</button>
+          <button id="reset-password-btn" class="secondary-btn" type="button">Reset Password</button>
+          <a class="secondary-link" href="/user/signup">New user? Sign up</a>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>

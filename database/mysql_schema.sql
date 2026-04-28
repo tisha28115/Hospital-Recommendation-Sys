@@ -1,0 +1,65 @@
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  firebase_uid VARCHAR(255) NULL UNIQUE,
+  city VARCHAR(255) NULL,
+  preferred_language VARCHAR(10) NOT NULL DEFAULT 'en',
+  is_admin TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admins (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS hospitals (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  city VARCHAR(255) NOT NULL,
+  specialization VARCHAR(255) NOT NULL,
+  rating DECIMAL(3,2) NOT NULL DEFAULT 0.00,
+  latitude DECIMAL(10,6) NULL,
+  longitude DECIMAL(10,6) NULL,
+  emergency_services TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS disease_mapping (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  disease VARCHAR(255) NOT NULL UNIQUE,
+  department VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  hospital_id INT NOT NULL,
+  disease VARCHAR(255) NOT NULL,
+  department VARCHAR(255) NOT NULL,
+  severity ENUM('low', 'medium', 'high') NOT NULL,
+  appointment_date DATE NOT NULL,
+  appointment_time TIME NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'booked',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_appointments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_appointments_hospital FOREIGN KEY (hospital_id) REFERENCES hospitals(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  disease VARCHAR(255) NOT NULL,
+  severity ENUM('low', 'medium', 'high') NOT NULL,
+  symptoms TEXT NULL,
+  hospital_id INT NULL,
+  city VARCHAR(255) NULL,
+  recommendation_snapshot JSON NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_history_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_history_hospital FOREIGN KEY (hospital_id) REFERENCES hospitals(id) ON DELETE SET NULL
+);

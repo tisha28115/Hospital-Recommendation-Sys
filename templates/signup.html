@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <main class="shell auth-shell">
+      <section class="hero auth-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">AI Healthcare Assistant</p>
+          <h1>Create your account.</h1>
+          <p class="lede">
+            Fill in your basic details to start using recommendations, chatbot support, and appointment booking.
+          </p>
+        </div>
+        <div class="hero-actions auth-nav">
+          <a class="ghost-link" href="/user/login">Back to User Login</a>
+          <a class="ghost-link secondary-btn" href="/">Back to Landing</a>
+        </div>
+      </section>
+
+      <section class="auth-single">
+        <article class="panel auth-card">
+          <h2>Sign Up</h2>
+          <form id="signup-form" class="stack-form">
+            <input name="name" placeholder="Full name" required />
+            <input name="email" type="email" placeholder="Email" required />
+            <input name="password" type="password" placeholder="Password" required />
+            <input name="city" placeholder="City" />
+            <select name="language">
+              <option value="en">English</option>
+              <option value="hi">Hindi</option>
+            </select>
+            <button type="submit">Create Account</button>
+          </form>
+          <div id="signup-status" class="muted status-text"></div>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>

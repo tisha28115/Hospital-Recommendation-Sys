@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">AI Healthcare Assistant</p>
+          <h1>Find the right hospital faster.</h1>
+          <p class="lede">
+            Enter symptoms or a disease, choose severity, add location, and get ranked hospital recommendations with emergency-aware prioritization.
+          </p>
+        </div>
+        <div class="hero-actions hero-actions-stack">
+          <a class="ghost-link secondary-btn" href="/">Back to Landing</a>
+          <button id="logout-btn" type="button">Logout</button>
+        </div>
+      </section>
+
+      <section class="dashboard-lead">
+        <article class="panel feature-panel">
+          <h2>Recommendation Request</h2>
+          <form id="recommend-form" class="stack-form">
+            <textarea name="symptoms" rows="4" placeholder="Symptoms, e.g. fever and headache"></textarea>
+            <div class="inline">
+              <select name="severity" required>
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+              <input name="city" placeholder="City" />
+            </div>
+            <select name="language">
+              <option value="en">English</option>
+              <option value="hi">Hindi</option>
+            </select>
+            <button type="submit">Get Recommendations</button>
+          </form>
+        </article>
+
+        <aside class="panel support-panel">
+          <p class="eyebrow">How It Works</p>
+          <h2>Request Guide</h2>
+          <div class="support-list">
+            <div class="support-item">
+              <strong>Describe symptoms clearly</strong>
+              <p>Add the main symptoms you are facing so the system can infer the right department.</p>
+            </div>
+            <div class="support-item">
+              <strong>Select severity carefully</strong>
+              <p>High severity prioritizes emergency-capable hospitals and faster access options.</p>
+            </div>
+            <div class="support-item">
+              <strong>Use your city</strong>
+              <p>The recommendation engine now prioritizes hospitals from your entered location first.</p>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="grid two">
+        <article class="panel">
+          <h2>Appointment Booking</h2>
+          <form id="booking-form" class="stack-form">
+            <input name="hospital_id" type="number" placeholder="Hospital ID from recommendations" required />
+            <input name="disease" placeholder="Disease" required />
+            <input name="department" placeholder="Department" required />
+            <select name="severity" required>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <div class="inline">
+              <input name="appointment_date" type="date" required />
+              <input name="appointment_time" type="time" required />
+            </div>
+            <button type="submit">Book Appointment</button>
+          </form>
+          <div id="booking-status" class="muted"></div>
+        </article>
+
+        <article class="panel history-panel">
+          <div class="panel-header">
+            <h2>History</h2>
+            <button id="load-history" class="secondary-btn" type="button">Load History</button>
+          </div>
+          <div id="history-cards" class="cards subdued history-cards"></div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Recommendations</h2>
+        <div id="summary" class="summary"></div>
+        <div id="recommendation-cards" class="cards"></div>
+      </section>
+    </main>
+
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>

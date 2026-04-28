@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <main class="shell auth-shell">
+      <section class="hero landing-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">AI Healthcare Assistant</p>
+          <h1>Are you a User or an Admin?</h1>
+          <p class="lede">
+            Choose your role to continue to hospital recommendations or the secured admin management panel.
+          </p>
+        </div>
+      </section>
+
+      <section class="landing-actions">
+        <a class="panel role-card" href="/user/login">
+          <h2>User</h2>
+          <p class="muted">Continue to symptom-based hospital recommendations and appointment booking.</p>
+        </a>
+        <a class="panel role-card" href="/admin/login">
+          <h2>Admin</h2>
+          <p class="muted">Login to manage hospitals, update data, and review system usage.</p>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>

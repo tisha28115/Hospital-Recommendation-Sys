@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }} Admin Login</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <main class="shell auth-shell">
+      <section class="hero auth-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Admin Access</p>
+          <h1>Login as Admin.</h1>
+          <p class="lede">
+            Enter your admin username and password to access the hospital management dashboard.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <a class="ghost-link" href="/">Back to Landing</a>
+        </div>
+      </section>
+
+      <section class="auth-single">
+        <article class="panel auth-card">
+          <h2>Admin Login</h2>
+          <form id="admin-login-form" class="stack-form">
+            <input name="username" placeholder="Username" required />
+            <input name="password" type="password" placeholder="Password" required />
+            <button type="submit">Login as Admin</button>
+          </form>
+          <div id="admin-login-status" class="muted status-text"></div>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>
