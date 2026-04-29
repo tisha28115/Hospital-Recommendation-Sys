@@ -1,5 +1,6 @@
 const byId = (id) => document.getElementById(id);
 let firebaseRuntimePromise = null;
+let latestRecommendation = null;
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -66,19 +67,27 @@ async function loadFirebaseRuntime() {
 
 function renderCards(targetId, hospitals = [], visited = false) {
   const target = byId(targetId);
+  if (!target) {
+    return;
+  }
   target.innerHTML = "";
   hospitals.forEach((hospital) => {
     const card = document.createElement("article");
     card.className = "card";
-    const distance = hospital.distance_km ?? "N/A";
+    const distanceValue = Number(hospital.distance_km);
+    const scoreValue = Number(hospital.recommendation_score);
+    const distance = Number.isFinite(distanceValue) ? `${distanceValue.toFixed(2)} km` : "N/A";
+    const score = Number.isFinite(scoreValue) ? (scoreValue * 100).toFixed(2) : "-";
+    const hospitalId = hospital.id || hospital.hospital_id || "";
     card.innerHTML = `
       <h3>${hospital.name || hospital.hospital_name}</h3>
       <p>${hospital.city || hospital.hospital_city || ""}</p>
       <p>${hospital.specialization || ""}</p>
-      ${visited ? "" : `<p>Score: ${hospital.recommendation_score ?? "-"}</p>`}
+      ${visited ? "" : `<p>Score: ${score}</p>`}
       <p>Distance: ${distance}</p>
       <p>${hospital.emergency_services ? "Emergency ready" : "Standard care"}</p>
-      <p class="mini">ID: ${hospital.id || hospital.hospital_id || "-"}</p>
+      <p class="mini">ID: ${hospitalId || "-"}</p>
+      ${visited ? "" : `<button class="secondary-btn card-action" type="button" data-book-hospital="${hospitalId}">Book</button>`}
     `;
     target.appendChild(card);
   });
@@ -86,6 +95,9 @@ function renderCards(targetId, hospitals = [], visited = false) {
 
 function renderSummary(data) {
   const summary = byId("summary");
+  if (!summary) {
+    return;
+  }
   summary.innerHTML = `
     <div class="summary-chip">${data.title || "Recommendations"}</div>
     <div class="summary-chip">Disease: ${data.disease || "-"}</div>
@@ -93,6 +105,41 @@ function renderSummary(data) {
     <div class="summary-chip">Severity: ${data.severity || "-"}</div>
     ${data.emergency_mode ? `<div class="summary-chip alert">${data.emergency_note}</div>` : ""}
   `;
+}
+
+function openModal(modalId) {
+  const modal = byId(modalId);
+  if (!modal) {
+    return;
+  }
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function closeModal(modalId) {
+  const modal = byId(modalId);
+  if (!modal) {
+    return;
+  }
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  if (!document.querySelector(".modal.is-open")) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function fillBookingForm(hospitalId = "") {
+  const form = byId("booking-form");
+  if (!form || !latestRecommendation) {
+    return;
+  }
+  if (hospitalId) {
+    form.elements.hospital_id.value = hospitalId;
+  }
+  form.elements.disease.value = latestRecommendation.disease || "";
+  form.elements.department.value = latestRecommendation.department || "";
+  form.elements.severity.value = latestRecommendation.severity || "medium";
 }
 
 byId("signup-form")?.addEventListener("submit", async (event) => {
@@ -239,9 +286,45 @@ byId("recommend-form")?.addEventListener("submit", async (event) => {
     byId("summary").textContent = result.message || "Recommendation failed.";
     return;
   }
+  latestRecommendation = result;
   renderSummary(result);
   renderCards("recommendation-cards", result.recommended_hospitals || []);
   renderCards("history-cards", result.previously_visited_hospitals || [], true);
+});
+
+byId("open-booking-modal")?.addEventListener("click", () => {
+  fillBookingForm();
+  openModal("booking-modal");
+});
+
+byId("open-history-modal")?.addEventListener("click", async () => {
+  openModal("history-modal");
+  byId("load-history")?.click();
+});
+
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+
+  const closeTarget = event.target.closest("[data-close-modal]");
+  if (closeTarget) {
+    closeModal(closeTarget.dataset.closeModal);
+    return;
+  }
+
+  const bookTarget = event.target.closest("[data-book-hospital]");
+  if (bookTarget) {
+    fillBookingForm(bookTarget.dataset.bookHospital);
+    openModal("booking-modal");
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") {
+    return;
+  }
+  document.querySelectorAll(".modal.is-open").forEach((modal) => closeModal(modal.id));
 });
 
 byId("booking-form")?.addEventListener("submit", async (event) => {

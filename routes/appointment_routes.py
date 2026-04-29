@@ -4,6 +4,8 @@ from flask import Blueprint, jsonify, request, session
 
 from database.db import get_connection
 from services.appointment_service import AppointmentSlotUnavailableError, create_appointment
+from services.auth_service import get_user_by_id
+from services.email_service import EmailDeliveryError, send_appointment_confirmation_email
 from utils.helpers import safe_json_payload
 
 
@@ -38,10 +40,36 @@ def book_appointment():
         return jsonify({"status": "error", "message": str(exc)}), 409
     except ValueError as exc:
         return jsonify({"status": "error", "message": str(exc)}), 400
+
+    user = get_user_by_id(conn, int(user_id)) or {}
+    email_sent = False
+    email_message = ""
+    recipient_email = str(user.get("email", "")).strip()
+    if recipient_email:
+        try:
+            send_appointment_confirmation_email(
+                recipient_email=recipient_email,
+                recipient_name=str(user.get("name", "")).strip(),
+                appointment=appointment,
+            )
+            email_sent = True
+        except EmailDeliveryError as exc:
+            email_message = str(exc)
+    else:
+        email_message = "No user email address is available for appointment confirmation."
+
+    response_message = "Your booking is confirmed."
+    if email_sent:
+        response_message += " A confirmation email has been sent."
+    elif email_message:
+        response_message += f" Booking saved, but email was not sent: {email_message}"
+
     return jsonify(
         {
             "status": "success",
-            "message": "Your booking is confirmed.",
+            "message": response_message,
+            "email_sent": email_sent,
+            "email_message": email_message,
             "appointment": appointment,
         }
     )

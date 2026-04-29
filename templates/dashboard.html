@@ -43,29 +43,26 @@
           </form>
         </article>
 
-        <aside class="panel support-panel">
-          <p class="eyebrow">How It Works</p>
-          <h2>Request Guide</h2>
-          <div class="support-list">
-            <div class="support-item">
-              <strong>Describe symptoms clearly</strong>
-              <p>Add the main symptoms you are facing so the system can infer the right department.</p>
-            </div>
-            <div class="support-item">
-              <strong>Select severity carefully</strong>
-              <p>High severity prioritizes emergency-capable hospitals and faster access options.</p>
-            </div>
-            <div class="support-item">
-              <strong>Use your city</strong>
-              <p>The recommendation engine now prioritizes hospitals from your entered location first.</p>
+        <aside class="panel recommendation-panel">
+          <div class="panel-header">
+            <h2>Recommended Hospitals</h2>
+            <div class="panel-actions">
+              <button id="open-booking-modal" class="secondary-btn" type="button">Book Appointment</button>
+              <button id="open-history-modal" class="secondary-btn" type="button">History</button>
             </div>
           </div>
+          <div id="summary" class="summary"></div>
+          <div id="recommendation-cards" class="cards recommendation-cards"></div>
         </aside>
       </section>
 
-      <section class="grid two">
-        <article class="panel">
-          <h2>Appointment Booking</h2>
+      <div id="booking-modal" class="modal" aria-hidden="true">
+        <div class="modal-backdrop" data-close-modal="booking-modal"></div>
+        <article class="panel modal-panel" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title">
+          <div class="panel-header">
+            <h2 id="booking-modal-title">Appointment Booking</h2>
+            <button class="secondary-btn modal-close" type="button" data-close-modal="booking-modal">Close</button>
+          </div>
           <form id="booking-form" class="stack-form">
             <input name="hospital_id" type="number" placeholder="Hospital ID from recommendations" required />
             <input name="disease" placeholder="Disease" required />
@@ -83,21 +80,21 @@
           </form>
           <div id="booking-status" class="muted"></div>
         </article>
+      </div>
 
-        <article class="panel history-panel">
+      <div id="history-modal" class="modal" aria-hidden="true">
+        <div class="modal-backdrop" data-close-modal="history-modal"></div>
+        <article class="panel modal-panel history-panel" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
           <div class="panel-header">
-            <h2>History</h2>
-            <button id="load-history" class="secondary-btn" type="button">Load History</button>
+            <h2 id="history-modal-title">History</h2>
+            <div class="panel-actions">
+              <button id="load-history" class="secondary-btn" type="button">Load History</button>
+              <button class="secondary-btn modal-close" type="button" data-close-modal="history-modal">Close</button>
+            </div>
           </div>
           <div id="history-cards" class="cards subdued history-cards"></div>
         </article>
-      </section>
-
-      <section class="panel">
-        <h2>Recommendations</h2>
-        <div id="summary" class="summary"></div>
-        <div id="recommendation-cards" class="cards"></div>
-      </section>
+      </div>
     </main>
 
     <script type="module" src="/static/js/app.js"></script>

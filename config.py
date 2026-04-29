@@ -41,6 +41,13 @@ class Settings:
     mysql_user: str = os.getenv("MYSQL_USER", "root")
     mysql_password: str = os.getenv("MYSQL_PASSWORD", "")
     mysql_database: str = os.getenv("MYSQL_DATABASE", "hospital_recommendation")
+    smtp_host: str = os.getenv("SMTP_HOST", "").strip()
+    smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
+    smtp_username: str = os.getenv("SMTP_USERNAME", "").strip()
+    smtp_password: str = os.getenv("SMTP_PASSWORD", "").strip()
+    smtp_sender_name: str = os.getenv("SMTP_SENDER_NAME", "AI Hospital Recommendation Assistant").strip()
+    smtp_sender_email: str = os.getenv("SMTP_SENDER_EMAIL", "").strip()
+    smtp_use_tls: bool = os.getenv("SMTP_USE_TLS", "1") == "1"
     seed_data: bool = os.getenv("APP_SEED_DATA", "1") == "1"
     model_path: str = os.getenv("MODEL_PATH", str(BASE_DIR / "ai" / "hospital_model.pkl"))
     top_k_recommendations: int = int(os.getenv("TOP_K_RECOMMENDATIONS", "5"))
