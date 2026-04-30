@@ -173,6 +173,7 @@ def _send_with_resend(
         headers={
             "Authorization": f"Bearer {settings.resend_api_key}",
             "Content-Type": "application/json",
+            "User-Agent": "hospital-recommendation-app/1.0",
         },
         method="POST",
     )
