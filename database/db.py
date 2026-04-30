@@ -44,9 +44,12 @@ def connect() -> Any:
         )
 
     _ensure_parent_dir(settings.db_path)
-    conn = sqlite3.connect(settings.db_path, check_same_thread=False)
+    conn = sqlite3.connect(settings.db_path, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout = 30000;")
     conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA journal_mode = WAL;")
+    conn.execute("PRAGMA synchronous = NORMAL;")
     return conn
 
 

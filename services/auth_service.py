@@ -50,17 +50,28 @@ def create_or_sync_firebase_user(
         next_name = normalized_name or str(existing_user.get("name", "")).strip() or email.split("@")[0]
         next_city = normalized_city if normalized_city else str(existing_user.get("city", "") or "").strip()
         next_language = normalized_language if normalized_language else str(existing_user.get("preferred_language", "en")).strip().lower() or "en"
+        current_firebase_uid = str(existing_user.get("firebase_uid") or "").strip()
 
-        execute(
-            conn,
-            """
-            UPDATE users
-            SET name=?, email=?, city=?, preferred_language=?, firebase_uid=?
-            WHERE id=?
-            """,
-            (next_name, email, next_city, next_language, firebase_uid, int(existing_user["id"])),
+        needs_update = any(
+            [
+                next_name != str(existing_user.get("name", "") or "").strip(),
+                email != str(existing_user.get("email", "") or "").strip().lower(),
+                next_city != str(existing_user.get("city", "") or "").strip(),
+                next_language != str(existing_user.get("preferred_language", "en") or "en").strip().lower(),
+                firebase_uid != current_firebase_uid,
+            ]
         )
-        conn.commit()
+        if needs_update:
+            execute(
+                conn,
+                """
+                UPDATE users
+                SET name=?, email=?, city=?, preferred_language=?, firebase_uid=?
+                WHERE id=?
+                """,
+                (next_name, email, next_city, next_language, firebase_uid, int(existing_user["id"])),
+            )
+            conn.commit()
         return get_user_by_id(conn, int(existing_user["id"])) or {}
 
     user_id = execute(
