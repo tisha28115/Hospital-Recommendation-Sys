@@ -61,9 +61,10 @@
 
 from __future__ import annotations
 
+import json
+import os
 from pathlib import Path
 from typing import Any
-import os
 
 from config import settings
 
@@ -76,26 +77,49 @@ except Exception:  # pragma: no cover
     credentials = None
 
 
-def assert_firebase_auth_ready() -> None:
-    if firebase_admin is None or auth is None or credentials is None:
-        raise RuntimeError(
-            "Firebase Admin SDK is not installed. Install `firebase-admin` before starting the app."
-        )
-
-    service_account_path = os.environ.get(
+def _service_account_path() -> str:
+    return os.environ.get(
         "FIREBASE_SERVICE_ACCOUNT_PATH",
         settings.firebase_service_account_path,
-    )
+    ).strip()
 
+
+def _service_account_json() -> str:
+    return os.environ.get(
+        "FIREBASE_SERVICE_ACCOUNT_JSON",
+        settings.firebase_service_account_json,
+    ).strip()
+
+
+def _service_account_certificate_source() -> str | dict[str, Any]:
+    service_account_json = _service_account_json()
+    if service_account_json:
+        try:
+            return dict(json.loads(service_account_json))
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON.") from exc
+
+    service_account_path = _service_account_path()
     if not service_account_path:
         raise RuntimeError(
-            "FIREBASE_SERVICE_ACCOUNT_PATH is not set."
+            "Set FIREBASE_SERVICE_ACCOUNT_PATH or FIREBASE_SERVICE_ACCOUNT_JSON for Firebase Admin."
         )
 
     if not Path(service_account_path).is_file():
         raise RuntimeError(
             f"Firebase service account file was not found at: {service_account_path}"
         )
+
+    return service_account_path
+
+
+def assert_firebase_auth_ready() -> None:
+    if firebase_admin is None or auth is None or credentials is None:
+        raise RuntimeError(
+            "Firebase Admin SDK is not installed. Install `firebase-admin` before starting the app."
+        )
+
+    _service_account_certificate_source()
 
 
 def firebase_auth_status() -> dict[str, str | bool]:
@@ -112,14 +136,8 @@ def _get_app() -> Any:
     try:
         return firebase_admin.get_app()
     except ValueError:
-        service_account_path = os.environ.get(
-            "FIREBASE_SERVICE_ACCOUNT_PATH",
-            settings.firebase_service_account_path,
-        )
-
         options = {"projectId": settings.firebase_project_id} if settings.firebase_project_id else None
-
-        cred = credentials.Certificate(service_account_path)
+        cred = credentials.Certificate(_service_account_certificate_source())
         return firebase_admin.initialize_app(cred, options=options)
 
 

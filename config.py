@@ -6,23 +6,24 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent
-ENV_FILE = BASE_DIR / "v.env"
+ENV_FILES = (BASE_DIR / ".env", BASE_DIR / "v.env")
 
 
 def _load_env_file() -> None:
-    if not ENV_FILE.is_file():
-        return
-
-    for raw_line in ENV_FILE.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    for env_file in ENV_FILES:
+        if not env_file.is_file():
             continue
 
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip("\"'")
-        if key and key not in os.environ:
-            os.environ[key] = value
+        for raw_line in env_file.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip("\"'")
+            if key and key not in os.environ:
+                os.environ[key] = value
 
 
 _load_env_file()
@@ -36,6 +37,7 @@ class Settings:
     db_path: str = os.getenv("APP_DB_PATH", str(BASE_DIR / "database" / "app.db"))
     firebase_project_id: str = os.getenv("FIREBASE_PROJECT_ID", "hospital-recommendation-9d085")
     firebase_service_account_path: str = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "")
+    firebase_service_account_json: str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON", "")
     mysql_host: str = os.getenv("MYSQL_HOST", "localhost")
     mysql_port: int = int(os.getenv("MYSQL_PORT", "3306"))
     mysql_user: str = os.getenv("MYSQL_USER", "root")
