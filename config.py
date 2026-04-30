@@ -50,6 +50,7 @@ class Settings:
     smtp_sender_name: str = os.getenv("SMTP_SENDER_NAME", "AI Hospital Recommendation Assistant").strip()
     smtp_sender_email: str = os.getenv("SMTP_SENDER_EMAIL", "").strip()
     smtp_use_tls: bool = os.getenv("SMTP_USE_TLS", "1") == "1"
+    resend_api_key: str = os.getenv("RESEND_API_KEY", "").strip()
     seed_data: bool = os.getenv("APP_SEED_DATA", "1") == "1"
     model_path: str = os.getenv("MODEL_PATH", str(BASE_DIR / "ai" / "hospital_model.pkl"))
     top_k_recommendations: int = int(os.getenv("TOP_K_RECOMMENDATIONS", "5"))

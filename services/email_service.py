@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import html
+import json
 import smtplib
 from email.message import EmailMessage
 from typing import Any
+from urllib.error import HTTPError
 from urllib.parse import quote_plus
+from urllib.request import Request, urlopen
 
 from config import settings
 
@@ -18,6 +21,11 @@ def _escape(value: Any) -> str:
 
 
 def email_config_status() -> tuple[bool, str]:
+    if settings.resend_api_key:
+        if not settings.smtp_sender_email:
+            return False, "Email notifications are not configured. Missing: SMTP_SENDER_EMAIL"
+        return True, "Email notifications are configured with Resend."
+
     missing = [
         key
         for key, value in {
@@ -45,25 +53,17 @@ def build_hospital_maps_link(appointment: dict[str, Any]) -> str:
     return f"https://www.google.com/maps/search/?api=1&query={quote_plus(query)}" if query else "https://www.google.com/maps"
 
 
-def send_appointment_confirmation_email(
+def _build_appointment_email_content(
     *,
-    recipient_email: str,
     recipient_name: str,
     appointment: dict[str, Any],
-) -> None:
-    ready, message = email_config_status()
-    if not ready:
-        raise EmailDeliveryError(message)
-
+) -> tuple[str, str, str]:
     maps_link = build_hospital_maps_link(appointment)
     hospital_name = str(appointment.get("hospital_name", "your selected hospital")).strip()
     hospital_city = str(appointment.get("hospital_city", "")).strip()
     city_line = f" ({hospital_city})" if hospital_city else ""
+    subject = f"Appointment Confirmed - {hospital_name}"
 
-    email_message = EmailMessage()
-    email_message["Subject"] = f"Appointment Confirmed - {hospital_name}"
-    email_message["From"] = f"{settings.smtp_sender_name} <{settings.smtp_sender_email}>"
-    email_message["To"] = recipient_email
     text_body = "\n".join(
         [
             f"Hello {recipient_name or 'User'},",
@@ -80,11 +80,10 @@ def send_appointment_confirmation_email(
             "",
             "Please arrive a little early and keep this email for reference.",
             "",
-            f"Regards,",
+            "Regards,",
             settings.smtp_sender_name,
         ]
     )
-    email_message.set_content(text_body)
 
     html_body = f"""
     <html>
@@ -151,6 +150,59 @@ def send_appointment_confirmation_email(
       </body>
     </html>
     """
+    return subject, text_body, html_body
+
+
+def _send_with_resend(
+    *,
+    recipient_email: str,
+    subject: str,
+    text_body: str,
+    html_body: str,
+) -> None:
+    payload = {
+        "from": f"{settings.smtp_sender_name} <{settings.smtp_sender_email}>",
+        "to": [recipient_email],
+        "subject": subject,
+        "text": text_body,
+        "html": html_body,
+    }
+    request = Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {settings.resend_api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=30) as response:
+            if response.status >= 400:
+                response_body = response.read().decode("utf-8", errors="replace")
+                raise EmailDeliveryError(f"Resend rejected the email: {response_body}")
+    except HTTPError as exc:
+        response_body = exc.read().decode("utf-8", errors="replace")
+        raise EmailDeliveryError(f"Resend rejected the email: {response_body}") from exc
+    except EmailDeliveryError:
+        raise
+    except Exception as exc:
+        raise EmailDeliveryError(f"Unable to send appointment confirmation email with Resend: {exc}") from exc
+
+
+def _send_with_smtp(
+    *,
+    recipient_email: str,
+    subject: str,
+    text_body: str,
+    html_body: str,
+) -> None:
+    email_message = EmailMessage()
+    email_message["Subject"] = subject
+    email_message["From"] = f"{settings.smtp_sender_name} <{settings.smtp_sender_email}>"
+    email_message["To"] = recipient_email
+    email_message.set_content(text_body)
     email_message.add_alternative(html_body, subtype="html")
 
     try:
@@ -161,3 +213,34 @@ def send_appointment_confirmation_email(
             server.send_message(email_message)
     except Exception as exc:
         raise EmailDeliveryError(f"Unable to send appointment confirmation email: {exc}") from exc
+
+
+def send_appointment_confirmation_email(
+    *,
+    recipient_email: str,
+    recipient_name: str,
+    appointment: dict[str, Any],
+) -> None:
+    ready, message = email_config_status()
+    if not ready:
+        raise EmailDeliveryError(message)
+
+    subject, text_body, html_body = _build_appointment_email_content(
+        recipient_name=recipient_name,
+        appointment=appointment,
+    )
+    if settings.resend_api_key:
+        _send_with_resend(
+            recipient_email=recipient_email,
+            subject=subject,
+            text_body=text_body,
+            html_body=html_body,
+        )
+        return
+
+    _send_with_smtp(
+        recipient_email=recipient_email,
+        subject=subject,
+        text_body=text_body,
+        html_body=html_body,
+    )
