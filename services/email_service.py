@@ -16,12 +16,48 @@ class EmailDeliveryError(Exception):
     pass
 
 
+def _smtp_configured() -> bool:
+    return all(
+        [
+            settings.smtp_host,
+            settings.smtp_username,
+            settings.smtp_password,
+            settings.smtp_sender_email,
+        ]
+    )
+
+
+def _use_resend() -> bool:
+    if settings.email_provider == "resend":
+        return True
+    if settings.email_provider == "smtp":
+        return False
+    return bool(settings.resend_api_key and not _smtp_configured())
+
+
 def _escape(value: Any) -> str:
     return html.escape(str(value if value is not None else "-"))
 
 
+def _format_resend_error(response_body: str) -> str:
+    try:
+        data = json.loads(response_body)
+    except json.JSONDecodeError:
+        return f"Resend rejected the email: {response_body}"
+
+    message = str(data.get("message", "")).strip()
+    if "You can only send testing emails to your own email address" in message:
+        return (
+            "Resend is in testing mode and can only send to the verified account email. "
+            "Verify a sending domain in Resend, or set EMAIL_PROVIDER=smtp to use SMTP."
+        )
+    return f"Resend rejected the email: {message or response_body}"
+
+
 def email_config_status() -> tuple[bool, str]:
-    if settings.resend_api_key:
+    if _use_resend():
+        if not settings.resend_api_key:
+            return False, "Email notifications are not configured. Missing: RESEND_API_KEY"
         if not settings.smtp_sender_email:
             return False, "Email notifications are not configured. Missing: SMTP_SENDER_EMAIL"
         return True, "Email notifications are configured with Resend."
@@ -182,10 +218,10 @@ def _send_with_resend(
         with urlopen(request, timeout=30) as response:
             if response.status >= 400:
                 response_body = response.read().decode("utf-8", errors="replace")
-                raise EmailDeliveryError(f"Resend rejected the email: {response_body}")
+                raise EmailDeliveryError(_format_resend_error(response_body))
     except HTTPError as exc:
         response_body = exc.read().decode("utf-8", errors="replace")
-        raise EmailDeliveryError(f"Resend rejected the email: {response_body}") from exc
+        raise EmailDeliveryError(_format_resend_error(response_body)) from exc
     except EmailDeliveryError:
         raise
     except Exception as exc:
@@ -230,7 +266,7 @@ def send_appointment_confirmation_email(
         recipient_name=recipient_name,
         appointment=appointment,
     )
-    if settings.resend_api_key:
+    if _use_resend():
         _send_with_resend(
             recipient_email=recipient_email,
             subject=subject,

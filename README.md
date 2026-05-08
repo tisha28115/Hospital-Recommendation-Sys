@@ -62,6 +62,21 @@ python app.py
 
 Open `http://127.0.0.1:5000`.
 
+## Email Notifications
+
+Appointment confirmations can be sent with SMTP or Resend. For Gmail SMTP, set:
+
+```powershell
+$env:EMAIL_PROVIDER="smtp"
+$env:SMTP_HOST="smtp.gmail.com"
+$env:SMTP_PORT="587"
+$env:SMTP_USERNAME="your_email@gmail.com"
+$env:SMTP_PASSWORD="your_gmail_app_password"
+$env:SMTP_SENDER_EMAIL="your_email@gmail.com"
+```
+
+If using Resend in test mode, Resend only sends to the verified account email. To send to other users, verify a sending domain in Resend and use that domain in `SMTP_SENDER_EMAIL`.
+
 ## Free Deployment Suggestions
 
 - Render: Flask app + managed MySQL
