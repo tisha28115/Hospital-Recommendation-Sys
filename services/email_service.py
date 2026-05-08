@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import json
 import smtplib
+import socket
 from email.message import EmailMessage
 from typing import Any
 from urllib.error import HTTPError
@@ -14,6 +15,29 @@ from config import settings
 
 class EmailDeliveryError(Exception):
     pass
+
+
+class IPv4SMTP(smtplib.SMTP):
+    def _get_socket(self, host: str, port: int, timeout: float | None) -> socket.socket:
+        errors: list[OSError] = []
+        for family, socktype, proto, _canonname, sockaddr in socket.getaddrinfo(
+            host,
+            port,
+            family=socket.AF_INET,
+            type=socket.SOCK_STREAM,
+        ):
+            sock = socket.socket(family, socktype, proto)
+            try:
+                sock.settimeout(timeout)
+                sock.connect(sockaddr)
+                return sock
+            except OSError as exc:
+                errors.append(exc)
+                sock.close()
+
+        if errors:
+            raise errors[-1]
+        raise OSError(f"No IPv4 address found for SMTP host {host}")
 
 
 def _smtp_configured() -> bool:
@@ -52,6 +76,26 @@ def _format_resend_error(response_body: str) -> str:
             "Verify a sending domain in Resend, or set EMAIL_PROVIDER=smtp to use SMTP."
         )
     return f"Resend rejected the email: {message or response_body}"
+
+
+def _format_smtp_error(exc: Exception) -> str:
+    raw_message = str(exc)
+    if (
+        isinstance(exc, smtplib.SMTPConnectError)
+        and int(getattr(exc, "smtp_code", 0) or 0) == 421
+        and "connect error 10013" in raw_message
+    ):
+        return (
+            "Your computer or network is blocking outbound SMTP to Gmail. "
+            "Allow Python through the firewall/security software, try another network, "
+            "or use Resend with a verified sending domain."
+        )
+    if isinstance(exc, OSError) and getattr(exc, "errno", None) in {101, 10013, 10053}:
+        return (
+            "Your computer or network blocked the SMTP connection. "
+            "Allow Python/outbound SMTP in the firewall or use an email provider that sends over HTTPS."
+        )
+    return f"Unable to send appointment confirmation email: {exc}"
 
 
 def email_config_status() -> tuple[bool, str]:
@@ -243,13 +287,13 @@ def _send_with_smtp(
     email_message.add_alternative(html_body, subtype="html")
 
     try:
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as server:
+        with IPv4SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as server:
             if settings.smtp_use_tls:
                 server.starttls()
             server.login(settings.smtp_username, settings.smtp_password)
             server.send_message(email_message)
     except Exception as exc:
-        raise EmailDeliveryError(f"Unable to send appointment confirmation email: {exc}") from exc
+        raise EmailDeliveryError(_format_smtp_error(exc)) from exc
 
 
 def send_appointment_confirmation_email(

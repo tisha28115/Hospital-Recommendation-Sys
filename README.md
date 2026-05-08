@@ -77,6 +77,8 @@ $env:SMTP_SENDER_EMAIL="your_email@gmail.com"
 
 If using Resend in test mode, Resend only sends to the verified account email. To send to other users, verify a sending domain in Resend and use that domain in `SMTP_SENDER_EMAIL`.
 
+If Gmail SMTP returns a network or firewall error such as `Errno 101`, `10013`, or `10053`, the app is configured correctly but the computer/network is blocking outbound SMTP. Allow Python through the firewall/security software, try another network, or use Resend after verifying a sending domain.
+
 ## Free Deployment Suggestions
 
 - Render: Flask app + managed MySQL
