@@ -329,10 +329,33 @@ document.addEventListener("keydown", (event) => {
 
 byId("booking-form")?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const form = event.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+  if (submitButton?.disabled) {
+    return;
+  }
+
   const formData = new FormData(event.target);
   const payload = Object.fromEntries(formData.entries());
-  const result = await api("/book_appointment", { method: "POST", body: JSON.stringify(payload) });
-  showStatus("booking-status", result.message || `Appointment booked at ${result.appointment?.hospital_name || "hospital"}`);
+  try {
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Booking...";
+    }
+    setStatusState("booking-status", "muted");
+    showStatus("booking-status", "Booking your appointment...");
+    const result = await api("/book_appointment", { method: "POST", body: JSON.stringify(payload) });
+    setStatusState("booking-status", result.status === "success" ? "success" : "error");
+    showStatus("booking-status", result.message || `Appointment booked at ${result.appointment?.hospital_name || "hospital"}`);
+  } catch (error) {
+    setStatusState("booking-status", "error");
+    showStatus("booking-status", "Unable to book the appointment. Please try again.");
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Book Appointment";
+    }
+  }
 });
 
 byId("load-history")?.addEventListener("click", async () => {

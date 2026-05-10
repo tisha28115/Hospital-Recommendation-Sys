@@ -96,7 +96,7 @@ def create_appointment(
     existing_appointment = fetch_one(
         conn,
         """
-        SELECT id
+        SELECT id, user_id
         FROM appointments
         WHERE hospital_id=?
           AND appointment_date=?
@@ -107,7 +107,9 @@ def create_appointment(
         (hospital_id, appointment_date, appointment_time),
     )
     if existing_appointment:
-        raise AppointmentSlotUnavailableError("Mentioned Slot is already booked.Sorry please select another slot!!")
+        if int(existing_appointment.get("user_id") or 0) == int(user_id):
+            raise AppointmentSlotUnavailableError("You already booked this hospital slot. Please choose a different date or time.")
+        raise AppointmentSlotUnavailableError("This hospital slot is already booked. Please choose another date or time.")
 
     insert_payload: dict[str, Any] = {
         "user_id": user_id,
